@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { Point, Collection } from '../types';
+import { Point, Collection, Photo } from '../types';
 
 // Коллекции
 export async function fetchCollections() {
