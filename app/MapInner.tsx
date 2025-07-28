@@ -53,15 +53,12 @@ function CenterMap({ point, onCentered }: { point: Point | null, onCentered: () 
     if (point) {
       map.flyTo([point.lat, point.lng], 16, { duration: 1 });
       setTimeout(() => {
-        const markers = document.querySelectorAll('.leaflet-marker-icon');
-        markers.forEach(marker => {
-          const markerInstance = (marker as any)._leaflet_id;
-          if (markerInstance) {
-            const leafletMarker = map._layers[markerInstance];
-            if (leafletMarker && leafletMarker.getLatLng) {
-              const latLng = leafletMarker.getLatLng();
-              if (latLng.lat === point.lat && latLng.lng === point.lng)
-                leafletMarker.openPopup();
+        // Открываем попап для центрированной точки
+        map.eachLayer((layer: any) => {
+          if (layer instanceof L.Marker && layer.getLatLng) {
+            const latLng = layer.getLatLng();
+            if (latLng.lat === point.lat && latLng.lng === point.lng) {
+              layer.openPopup();
             }
           }
         });
