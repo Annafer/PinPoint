@@ -33,7 +33,7 @@ export default function Auth({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 pt-12 sm:pt-20">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 px-4 pt-12 sm:pt-0">
       <div className="relative w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
