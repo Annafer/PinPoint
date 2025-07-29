@@ -159,7 +159,11 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
       setFilteredPoints(points);
     }
   }, [currentFilterType, currentMyCollectionFilter, currentPublicCollectionId, points]);
-  useEffect(() => loadFilteredPoints(), [loadFilteredPoints]);
+  useEffect(() => {
+  (async () => {
+    await loadFilteredPoints();
+  })();
+}, [loadFilteredPoints]);
 
   /* ----------  COLORS MAP  ---------- */
   const allCollections = useMemo(() => {
