@@ -242,7 +242,11 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
     }, 500);
     setSearchDebounceTimer(timer);
   };
-  useEffect(() => () => searchDebounceTimer && clearTimeout(searchDebounceTimer!), [searchDebounceTimer]);
+  useEffect(() => {
+   return () => {
+     if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+   };
+ }, [searchDebounceTimer]);
 
   /* ----------  CRUD ---------- */
   const handleSave = async (id: string) => {
