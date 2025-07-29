@@ -322,7 +322,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
     }
   };
 
-  const handleSave = async (id: string) => {
+const handleSave = async (id: string) => {
     if (!editingPoint) return;
     
     if (!editingPoint.name.trim() || editingPoint.name === 'Новая точка') {

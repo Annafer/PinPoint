@@ -26,7 +26,6 @@ export interface Photo {
 }
 
 export type FilterType = 
-  | 'all-public'           // Все доступные коллекции (публичные)
   | 'my-collections'       // Мои коллекции
   | 'public-collections';  // Публичные коллекции
 
