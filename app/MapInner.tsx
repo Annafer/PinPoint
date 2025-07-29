@@ -680,20 +680,6 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
         zoom={10}
         style={{ height: '100vh', width: '100%' }}
         zoomControl={false}
-        contextmenu={true}
-        contextmenuWidth={140}
-        contextmenuItems={[
-          {
-            text: 'Переместить маркер',
-            callback: (e) => {
-              const marker = e.relatedTarget;
-              if (!marker) return;
-              marker.dragging.enable();
-              marker.options.draggable = true;
-              marker.fire('dragstart');
-            },
-          },
-        ]}
       >
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <MapClickHandler />
