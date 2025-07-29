@@ -699,7 +699,12 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
       // Enable drag on right-click
       const m = e.target as L.Marker;
       if (isEditable) {
-        m.dragging.enable();
+        contextmenu: (e) => {
+  const m = e.target as L.Marker;
+  if (isEditable && m.dragging) {
+    m.dragging.enable();
+  }
+},
         // Optional: show a toast or visual cue
       }
     },
