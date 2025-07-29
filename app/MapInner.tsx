@@ -696,23 +696,16 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
   draggable={isEditable}
   eventHandlers={{
     contextmenu: (e) => {
-      // Enable drag on right-click
       const m = e.target as L.Marker;
-      if (isEditable) {
-        contextmenu: (e) => {
-  const m = e.target as L.Marker;
-  if (isEditable && m.dragging) {
-    m.dragging.enable();
-  }
-},
-        // Optional: show a toast or visual cue
+      if (isEditable && m.dragging) {
+        m.dragging.enable();
       }
     },
     dragend: async (e) => {
       /* already exists – saves new coords */
     },
   }}
->
+/>
               {(!isMobile && (point.id === openPopupId || point.id === 'virtual-new')) && (
                 <Popup closeButton={false} closeOnClick={false} closeOnEscapeKey={false}>
                   <div className="bg-white rounded-xl shadow-sm" style={{ minWidth: 300, margin: '-12px -12px' }}>
