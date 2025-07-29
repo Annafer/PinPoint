@@ -517,6 +517,158 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
         </div>
       </div>
 
+      {/* ----------  MOBILE FILTERS ---------- */}
+      {showFilters && (
+        <div className="fixed inset-0 bg-black/40 z-[2000] md:hidden" onClick={() => setShowFilters(false)}>
+          <div className="fixed top-0 left-0 right-0 bg-white rounded-b-2xl p-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="space-y-3">
+
+              <div className={`border rounded-lg ${currentFilterType === 'my-collections' ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}`}>
+                <button
+                  onClick={() => handleFilterChange('my-collections')}
+                  className={`w-full text-left p-3 rounded-t-lg ${
+                    currentFilterType === 'my-collections' ? 'text-blue-700 font-semibold' : 'text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">📍</span>
+                    <div>
+                      <div className="font-medium">Мои коллекции</div>
+                      <div className="text-sm opacity-70">Мои точки и коллекции</div>
+                    </div>
+                  </div>
+                </button>
+                
+                {currentFilterType === 'my-collections' && (
+                  <div className="px-3 pb-3 space-y-1">
+                    <button
+                      onClick={() => handleFilterChange('my-collections', 'all-my', undefined, true)}
+                      className={`w-full text-left p-2 rounded-md ${
+                        currentMyCollectionFilter === 'all-my' ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      ✨ Все мои точки ({points.length})
+                    </button>
+                    
+                    <button
+                      onClick={() => handleFilterChange('my-collections', 'no-collection', undefined, true)}
+                      className={`w-full text-left p-2 rounded-md flex items-center gap-2 ${
+                        currentMyCollectionFilter === 'no-collection' ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="w-2.5 h-2.5 rounded-full bg-gray-400" />
+                      Без коллекции ({points.filter(p => !p.collection_id).length})
+                    </button>
+
+                    {collections.map(c => (
+                      <button
+                        key={c.id}
+                        onClick={() => handleFilterChange('my-collections', c.id, undefined, true)}
+                        className={`w-full text-left p-2 rounded-md flex items-center gap-2 ${
+                          currentMyCollectionFilter === c.id ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                      >
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                        {c.name} ({points.filter(p => p.collection_id === c.id).length})
+                        {c.is_public && <span className="text-xs">🌐</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={`border rounded-lg ${currentFilterType === 'public-collections' ? 'border-blue-200 bg-blue-50' : 'border-gray-200'}`}>
+                <button
+                  onClick={() => handleFilterChange('public-collections')}
+                  className={`w-full text-left p-3 rounded-t-lg ${
+                    currentFilterType === 'public-collections' ? 'text-blue-700 font-semibold' : 'text-gray-800 hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">🌍</span>
+                    <div>
+                      <div className="font-medium">Публичные коллекции</div>
+                    </div>
+                  </div>
+                </button>
+                
+                {currentFilterType === 'public-collections' && (
+                  <div className="px-3 pb-3 space-y-1 max-h-40 overflow-y-auto">
+                    <button
+                      onClick={() => handleFilterChange('public-collections', undefined, 'all-public', true)}
+                      className={`w-full text-left p-2 rounded-md flex items-center gap-2 ${
+                        currentPublicCollectionId === 'all-public' ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      🌐 Все публичные коллекции
+                    </button>
+                    
+                    {publicCollections.length === 0 ? (
+                      <p className="text-sm text-gray-500 p-2">Нет других публичных коллекций</p>
+                    ) : (
+                      publicCollections.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={() => handleFilterChange('public-collections', undefined, c.id, true)}
+                          className={`w-full text-left p-2 rounded-md flex items-center gap-2 ${
+                            currentPublicCollectionId === c.id ? 'bg-blue-100 text-blue-800 font-medium' : 'text-gray-600 hover:bg-gray-100'
+                          }`}
+                        >
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }} />
+                          {c.name} 🌐
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ----------  MOBILE SEARCH ---------- */}
+      {showSearch && (
+        <div className="fixed inset-0 bg-black/40 z-[2000] md:hidden" onClick={() => setShowSearch(false)}>
+          <div className="fixed top-0 left-0 right-0 bg-white rounded-b-2xl p-4" onClick={e => e.stopPropagation()}>
+            <input
+              type="text"
+              placeholder="Координаты или название"
+              className="w-full p-2 border border-gray-200 rounded-lg text-sm"
+              value={searchQuery}
+              onChange={e => handleSearchChange(e.target.value)}
+              onKeyPress={e => {
+                if (e.key === 'Enter' && searchResults.length > 0) {
+                  const firstResult = searchResults[0];
+                  map?.flyTo([firstResult.lat, firstResult.lon], 16);
+                  setShowSearch(false);
+                  setSearchResults([]);
+                  setSearchQuery('');
+                }
+              }}
+            />
+            {searchResults.length > 0 && (
+              <div className="mt-2 max-h-48 overflow-y-auto text-sm">
+                {searchResults.map((r, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      map?.flyTo([r.lat, r.lon], 16);
+                      setShowSearch(false);
+                      setSearchResults([]);
+                      setSearchQuery('');
+                    }}
+                    className="w-full text-left p-2 hover:bg-gray-50 rounded"
+                  >
+                    {r.display_name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ----------  MOBILE BOTTOM-SHEET ---------- */}
       {isMobile && showBottomSheet && bottomSheetPoint && (
         <>
@@ -690,22 +842,59 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
           const isEditable = canEditPoint(point);
           return (
             <Marker
-  key={point.id}
-  position={[point.lat, point.lng]}
-  icon={icon}
-  draggable={isEditable}
-  eventHandlers={{
-    contextmenu: (e) => {
-      const m = e.target as L.Marker;
-      if (isEditable && m.dragging) {
-        m.dragging.enable();
-      }
-    },
-    dragend: async (e) => {
-      /* already exists – saves new coords */
-    },
-  }}
-/>
+              key={point.id}
+              position={[point.lat, point.lng]}
+              icon={icon}
+              draggable={isEditable && editingPoint?.id === point.id}
+              eventHandlers={{
+                add: e => {
+                  if (point.id === openPopupId || point.id === 'virtual-new') {
+                    e.target.openPopup();
+                  }
+                },
+                click: () => {
+                  if (isEditable) {
+                    setEditingPoint(point);
+                  }
+                  if (point.id !== 'virtual-new') {
+                    setOpenPopupId(point.id);
+                  }
+                  if (isMobile) {
+                    setBottomSheetPoint(point);
+                    setShowBottomSheet(true);
+                  }
+                },
+                dragend: async (e) => {
+                  const marker = e.target;
+                  const newPosition = marker.getLatLng();
+                  
+                  if (editingPoint && editingPoint.id === point.id) {
+                    setEditingPoint({
+                      ...editingPoint,
+                      lat: newPosition.lat,
+                      lng: newPosition.lng
+                    });
+                  }
+                  
+                  try {
+                    const updated = await updatePoint(point.id, {
+                      lat: newPosition.lat,
+                      lng: newPosition.lng
+                    });
+                    onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
+                    
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
+                    notification.innerText = '✓ Местоположение обновлено';
+                    document.body.appendChild(notification);
+                    setTimeout(() => notification.remove(), 2000);
+                  } catch (err) {
+                    console.error('Error updating point position:', err);
+                    alert('Ошибка при перемещении точки');
+                  }
+                }
+              }}
+            >
               {(!isMobile && (point.id === openPopupId || point.id === 'virtual-new')) && (
                 <Popup closeButton={false} closeOnClick={false} closeOnEscapeKey={false}>
                   <div className="bg-white rounded-xl shadow-sm" style={{ minWidth: 300, margin: '-12px -12px' }}>
@@ -836,6 +1025,26 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
         })}
       </MapContainer>
 
+      {/* ----------  ZOOM BUTTONS ---------- */}
+      <div className="fixed bottom-4 left-4 z-[999] flex flex-col space-y-2">
+        <button
+          onClick={() => map?.zoomIn()}
+          className="bg-white w-10 h-10 rounded-lg shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-200"
+        >
+          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+        <button
+          onClick={() => map?.zoomOut()}
+          className="bg-white w-10 h-10 rounded-lg shadow-lg flex items-center justify-center hover:shadow-xl transition-all duration-200"
+        >
+          <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+          </svg>
+        </button>
+      </div>
+
       {/* ----------  NEW COLLECTION MODAL ---------- */}
       {showNewCollectionModal && (
         <div className="fixed inset-0 bg-black/50 z-[2001] flex items-center justify-center p-4" onClick={() => setShowNewCollectionModal(false)}>
@@ -883,6 +1092,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                     if (editingPoint) {
                       setEditingPoint({ ...editingPoint, collection_id: newCol.id });
                     }
+                    onPointsUpdate(points);
                     setShowNewCollectionModal(false);
                     setNewCollectionName('');
                     setNewCollectionIsPublic(false);
