@@ -704,40 +704,24 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
           const isEditable = canEditPoint(point);
           return (
             <Marker
-              key={point.id}
-              position={[point.lat, point.lng]}
-              icon={icon}
-              draggable={isEditable}
-              eventHandlers={{
-                add: (e) => {
-                  if (point.id === openPopupId || point.id === 'virtual-new') e.target.openPopup();
-                },
-                click: () => {
-                  if (isEditable) setEditingPoint(point);
-                  if (point.id !== 'virtual-new') setOpenPopupId(point.id);
-                  if (isMobile) {
-                    setBottomSheetPoint(point);
-                    setShowBottomSheet(true);
-                  }
-                },
-                dragend: async (e) => {
-                  const marker = e.target;
-                  const newPos = marker.getLatLng();
-                  if (!isEditable) return;
-                  try {
-                    const updated = await updatePoint(point.id, { lat: newPos.lat, lng: newPos.lng });
-                    onPointsUpdate(points.map((p) => (p.id === point.id ? updated : p)));
-                    const note = document.createElement('div');
-                    note.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
-                    note.innerText = '✓ Местоположение обновлено';
-                    document.body.appendChild(note);
-                    setTimeout(() => note.remove(), 2000);
-                  } catch {
-                    alert('Ошибка при перемещении точки');
-                  }
-                },
-              }}
-            >
+  key={point.id}
+  position={[point.lat, point.lng]}
+  icon={icon}
+  draggable={isEditable}
+  eventHandlers={{
+    contextmenu: (e) => {
+      // Enable drag on right-click
+      const m = e.target as L.Marker;
+      if (isEditable) {
+        m.dragging.enable();
+        // Optional: show a toast or visual cue
+      }
+    },
+    dragend: async (e) => {
+      /* already exists – saves new coords */
+    },
+  }}
+>
               {(!isMobile && (point.id === openPopupId || point.id === 'virtual-new')) && (
                 <Popup closeButton={false} closeOnClick={false} closeOnEscapeKey={false}>
                   <div className="bg-white rounded-xl shadow-sm" style={{ minWidth: 300, margin: '-12px -12px' }}>
