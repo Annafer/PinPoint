@@ -38,35 +38,37 @@ export default function Home() {
   const [selectedPublicCollectionId, setSelectedPublicCollectionId] = useState<string | undefined>(undefined);
   const mapRef = useRef<any>(null);
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-    const handleCollectionsUpdated = () => {
-      if (session?.user) loadUserData();
-    };
-    window.addEventListener('collectionsUpdated', handleCollectionsUpdated);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserData();
-      }
-      setLoading(false);
-    });
+useEffect(() => {
+  const handleCollectionsUpdated = () => {
+    if (user) loadUserData();
+  };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadUserData();
-      } else {
-        setPoints([]);
-        setCollections([]);
-        setPublicCollections([]);
-      }
-    });
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setUser(session?.user ?? null);
+    if (session?.user) {
+      loadUserData();
+    }
+    setLoading(false);
+  });
 
-    return () => {
-      subscription.unsubscribe();
-      window.removeEventListener('collectionsUpdated', handleCollectionsUpdated);
-    };
-  }, []);
+  window.addEventListener('collectionsUpdated', handleCollectionsUpdated);
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+    if (session?.user) {
+      loadUserData();
+    } else {
+      setPoints([]);
+      setCollections([]);
+      setPublicCollections([]);
+    }
+  });
+
+  return () => {
+    subscription.unsubscribe();
+    window.removeEventListener('collectionsUpdated', handleCollectionsUpdated);
+  };
+}, [user]);
 
   const loadUserData = async () => {
     try {
