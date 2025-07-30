@@ -267,7 +267,7 @@ export default function Home() {
             <button
               type="button"
               className="w-full flex items-center justify-between p-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white"
-              onClick={() => setShowCollectionDropdown(!showCollectionDropdown)}}
+              onClick={() => setShowCollectionDropdown(!showCollectionDropdown)}
             >
               <div className="flex items-center">
                 {selectedCollectionId ? (
