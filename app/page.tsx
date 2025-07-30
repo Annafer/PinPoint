@@ -401,7 +401,7 @@ export default function Home() {
                               await deletePoint(point.id);
                               setPoints(points.filter(p => p.id !== point.id));
                             }
-                          }}}
+                          }}
                           className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
