@@ -22,6 +22,7 @@ export default function Home() {
   const [points, setPoints] = useState<Point[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [publicCollections, setPublicCollections] = useState<Collection[]>([]);
+  const [showCollectionDropdown, setShowCollectionDropdown] = useState(false);
   const [activeTab, setActiveTab] = useState<'points' | 'collections'>('points');
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,10 @@ export default function Home() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleCollectionsUpdated = () => {
+      if (session?.user) loadUserData();
+    };
+    window.addEventListener('collectionsUpdated', handleCollectionsUpdated);
       setUser(session?.user ?? null);
       if (session?.user) {
         loadUserData();
@@ -57,7 +62,10 @@ export default function Home() {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener('collectionsUpdated', handleCollectionsUpdated);
+    };
   }, []);
 
   const loadUserData = async () => {
@@ -69,7 +77,7 @@ export default function Home() {
       ]);
       setCollections(collectionsData);
       setPoints(pointsData); // Уже отфильтровано в функции fetchPoints
-      setPublicCollections(publicCollectionsData);
+      setPublicCollections(publicCollectionsData.filter(c => c.user_id !== user?.id));
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -259,10 +267,7 @@ export default function Home() {
             <button
               type="button"
               className="w-full flex items-center justify-between p-2 border border-gray-200 rounded-lg text-sm text-gray-800 bg-white"
-              onClick={() => {
-                const dropdown = document.getElementById('collectionDropdown');
-                dropdown?.classList.toggle('hidden');
-              }}
+              onClick={() => setShowCollectionDropdown(!showCollectionDropdown)}}
             >
               <div className="flex items-center">
                 {selectedCollectionId ? (
@@ -296,14 +301,14 @@ export default function Home() {
 
             <div
               id="collectionDropdown"
-              className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 hidden"
+              className={`absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 ${showCollectionDropdown ? '' : 'hidden'}`}
             >
               <button
                 type="button"
                 className="w-full flex items-center p-2 text-sm text-gray-800 hover:bg-gray-100"
                 onClick={() => {
                   setSelectedCollectionId(undefined);
-                  document.getElementById('collectionDropdown')?.classList.add('hidden');
+                  setShowCollectionDropdown(false);
                 }}
               >
                 <div className="w-4 h-4 rounded-full mr-2 bg-gray-400" />
@@ -317,7 +322,7 @@ export default function Home() {
                   className="w-full flex items-center p-2 text-sm text-gray-800 hover:bg-gray-100"
                   onClick={() => {
                     setSelectedCollectionId(collection.id);
-                    document.getElementById('collectionDropdown')?.classList.add('hidden');
+                    setShowCollectionDropdown(false);
                   }}
                 >
                   <div
@@ -390,13 +395,13 @@ export default function Home() {
                           />
                         )}
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             if (confirm('Удалить точку?')) {
-                              deletePoint(point.id);
+                              await deletePoint(point.id);
                               setPoints(points.filter(p => p.id !== point.id));
                             }
-                          }}
+                          }}}
                           className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 rounded transition-all"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

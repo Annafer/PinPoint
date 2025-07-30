@@ -159,10 +159,8 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
       setFilteredPoints(points);
     }
   }, [currentFilterType, currentMyCollectionFilter, currentPublicCollectionId, points]);
-  useEffect(() => {
-  (async () => {
-    await loadFilteredPoints();
-  })();
+useEffect(() => {
+  loadFilteredPoints();
 }, [loadFilteredPoints]);
 
   /* ----------  COLORS MAP  ---------- */
@@ -604,7 +602,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                     </button>
                     
                     {publicCollections.length === 0 ? (
-                      <p className="text-sm text-gray-500 p-2">Нет других публичных коллекций</p>
+                      <p className="text-sm text-gray-500 p-2">Нет публичных коллекций от других пользователей</p>
                     ) : (
                       publicCollections.map(c => (
                         <button
@@ -865,6 +863,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                   }
                 },
                 dragend: async (e) => {
+                  if (!canEditPoint(point)) return;
                   const marker = e.target;
                   const newPosition = marker.getLatLng();
                   
@@ -888,6 +887,8 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                     notification.innerText = '✓ Местоположение обновлено';
                     document.body.appendChild(notification);
                     setTimeout(() => notification.remove(), 2000);
+                    // Обновляем список коллекций в родительском компоненте
+                    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
                   } catch (err) {
                     console.error('Error updating point position:', err);
                     alert('Ошибка при перемещении точки');
@@ -1077,7 +1078,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                 id="new-collection-public"
                 checked={newCollectionIsPublic}
                 onChange={(e) => setNewCollectionIsPublic(e.target.checked)}
-                className="mr-2"
+                className="mr-2 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
               />
               <label htmlFor="new-collection-public" className="text-sm text-gray-700">
                 🌐 Публичная коллекция
@@ -1093,6 +1094,8 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                       setEditingPoint({ ...editingPoint, collection_id: newCol.id });
                     }
                     onPointsUpdate(points);
+                    // Обновляем список коллекций через родительский компонент
+                    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
                     setShowNewCollectionModal(false);
                     setNewCollectionName('');
                     setNewCollectionIsPublic(false);
@@ -1101,6 +1104,8 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
                     note.innerText = '✓ Коллекция создана';
                     document.body.appendChild(note);
                     setTimeout(() => note.remove(), 2000);
+                    // Обновляем список коллекций в родительском компоненте
+                    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
                   } catch {
                     alert('Ошибка при создании коллекции');
                   }

@@ -33,3 +33,7 @@ export type MyCollectionFilter =
   | 'all-my'               // Все мои точки
   | 'no-collection'        // Мои точки без коллекции
   | string;                // ID конкретной моей коллекции
+  
+export type PublicCollectionFilter = 
+  | 'all-public'           // Все публичные коллекции
+  | string;                // ID конкретной публичной коллекции

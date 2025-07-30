@@ -26,6 +26,10 @@ export default function Auth({ onSuccess }: { onSuccess: () => void }) {
     } else {
       if (!isLogin) {
         setMsg('Проверьте вашу почту для подтверждения регистрации');
+        setTimeout(() => {
+          setIsLogin(true);
+          setMsg('');
+        }, 3000);
       } else {
         onSuccess();
       }
