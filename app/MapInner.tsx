@@ -869,46 +869,45 @@ useEffect(() => {
                   }
                 },
                 dragend: async (e) => {
-                  if (!canEditPoint(point)) return;
-                  const marker = e.target;
-                  const newPosition = marker.getLatLng();
-                  
-                  if (editingPoint && editingPoint.id === point.id) {
-                    setEditingPoint({
-                      ...editingPoint,
-                      lat: newPosition.lat,
-                      lng: newPosition.lng
-                    });
-                  }
-                  
-                  try {
-                    // Сначала обновляем локальное состояние для мгновенного отображения
-                    onPointsUpdate(points.map(p => 
-                      p.id === point.id 
-                        ? { ...p, lat: newPosition.lat, lng: newPosition.lng } 
-                        : p
-                    ));
-                    
-                    try {
-                      const updated = await updatePoint(point.id, {
-                        lat: newPosition.lat,
-                        lng: newPosition.lng
-                      });
-                      // Обновляем с актуальными данными с сервера
-                      onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
-                    
-                    const notification = document.createElement('div');
-                    notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
-                    notification.innerText = '✓ Местоположение обновлено';
-                    document.body.appendChild(notification);
-                    setTimeout(() => notification.remove(), 2000);
-                    // Обновляем список коллекций в родительском компоненте
-                    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
-                  } catch (err) {
-                    console.error('Error updating point position:', err);
-                    alert('Ошибка при перемещении точки');
-                  }
-                }
+  if (!canEditPoint(point)) return;
+  const marker = e.target;
+  const newPosition = marker.getLatLng();
+  
+  if (editingPoint && editingPoint.id === point.id) {
+    setEditingPoint({
+      ...editingPoint,
+      lat: newPosition.lat,
+      lng: newPosition.lng
+    });
+  }
+  
+  // Сначала обновляем локальное состояние для мгновенного отображения
+  onPointsUpdate(points.map(p => 
+    p.id === point.id 
+      ? { ...p, lat: newPosition.lat, lng: newPosition.lng } 
+      : p
+  ));
+  
+  try {
+    const updated = await updatePoint(point.id, {
+      lat: newPosition.lat,
+      lng: newPosition.lng
+    });
+    // Обновляем с актуальными данными с сервера
+    onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
+    
+    const notification = document.createElement('div');
+    notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
+    notification.innerText = '✓ Местоположение обновлено';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
+    // Обновляем список коллекций в родительском компоненте
+    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
+  } catch (err) {
+    console.error('Error updating point position:', err);
+    alert('Ошибка при перемещении точки');
+  }
+}
               }}
             >
               {(!isMobile && (point.id === openPopupId || point.id === 'virtual-new')) && (
