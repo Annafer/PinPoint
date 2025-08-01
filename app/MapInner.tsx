@@ -206,8 +206,8 @@ useEffect(() => {
           setShowBottomSheet(true);
         } else {
           const virtualPoint = { ...tempEditingPoint, id: 'virtual-new' };
-          // Используем filteredPoints вместо points для корректной работы с фильтрами
-          setFilteredPoints([...filteredPoints, virtualPoint]);
+          // Добавляем виртуальную точку к основному массиву points
+          onPointsUpdate([...points, virtualPoint]);
           setOpenPopupId('virtual-new');
         }
       },
@@ -265,8 +265,6 @@ useEffect(() => {
           collection_id: editingPoint.collection_id,
         });
         onPointsUpdate([...points.filter((p) => p.id !== 'virtual-new'), saved]);
-        // Убираем виртуальную точку из отфильтрованных точек
-        setFilteredPoints(filteredPoints.filter((p) => p.id !== 'virtual-new'));
         setPendingPoint(null);
       } else {
         if (!canEditPoint(editingPoint)) {
@@ -303,7 +301,7 @@ useEffect(() => {
     if (editingPoint?.name === 'Новая точка' && !confirm('Не добавлять объект?')) return;
     if (editingPoint && editingPoint.name !== 'Новая точка' && !confirm('Не сохранять изменения?')) return;
 
-    if (editingPoint?.id === 'editing-new') {
+    if (editingPoint?.id === 'editing-new' || editingPoint?.id === 'virtual-new') {
       onPointsUpdate(points.filter((p) => p.id !== 'virtual-new'));
       setPendingPoint(null);
     }
@@ -871,6 +869,7 @@ useEffect(() => {
   const marker = e.target;
   const newPosition = marker.getLatLng();
   
+  // Обновляем editingPoint если он активен
   if (editingPoint && editingPoint.id === point.id) {
     setEditingPoint({
       ...editingPoint,
@@ -879,19 +878,13 @@ useEffect(() => {
     });
   }
   
-  // Сначала обновляем локальное состояние для мгновенного отображения
-  onPointsUpdate(points.map(p => 
-    p.id === point.id 
-      ? { ...p, lat: newPosition.lat, lng: newPosition.lng } 
-      : p
-  ));
-  
   try {
     const updated = await updatePoint(point.id, {
       lat: newPosition.lat,
       lng: newPosition.lng
     });
-    // Обновляем с актуальными данными с сервера
+    
+    // Обновляем точки с новыми координатами
     onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
     
     const notification = document.createElement('div');
@@ -899,11 +892,11 @@ useEffect(() => {
     notification.innerText = '✓ Местоположение обновлено';
     document.body.appendChild(notification);
     setTimeout(() => notification.remove(), 2000);
-    // Обновляем список коллекций в родительском компоненте
-    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
   } catch (err) {
     console.error('Error updating point position:', err);
     alert('Ошибка при перемещении точки');
+    // Возвращаем маркер на исходную позицию
+    marker.setLatLng([point.lat, point.lng]);
   }
 }
               }}
@@ -972,48 +965,14 @@ useEffect(() => {
                               ))}
                             </select>
                             <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              // Для PC версии создаем коллекцию inline
-                              const name = prompt('Название новой коллекции:');
-                              if (!name?.trim()) return;
-                              
-                              // Проверяем уникальность имени
-                              const nameExists = collections.some(c => 
-                                c.name.toLowerCase() === name.trim().toLowerCase()
-                              );
-                              if (nameExists) {
-                                alert('Коллекция с таким именем уже существует');
-                                return;
-                              }
-                              
-                              try {
-                                const newCol = await createCollection(name.trim(), '#3B82F6', false);
-                                
-                                // Обновляем локальный список коллекций
-                                const updatedCollections = [...collections, newCol];
-                                if (onCollectionsUpdate) {
-                                  onCollectionsUpdate(updatedCollections);
-                                }
-                                
-                                // Сразу выбираем новую коллекцию для точки
-                                if (!editingPoint || editingPoint.id !== point.id) setEditingPoint(point);
-                                setEditingPoint((prev) => ({ ...prev!, collection_id: newCol.id }));
-                                
-                                // Уведомление
-                                const notification = document.createElement('div');
-                                notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
-                                notification.innerText = '✓ Коллекция создана';
-                                document.body.appendChild(notification);
-                                setTimeout(() => notification.remove(), 2000);
-                              } catch (err) {
-                                alert('Ошибка при создании коллекции');
-                              }
-                            }}
-                            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                            title="Создать новую коллекцию"
-                          >
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowNewCollectionModal(true);
+                              }}
+                              className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              title="Создать новую коллекцию"
+                            >
                               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
@@ -1154,6 +1113,12 @@ useEffect(() => {
                     
                     if (editingPoint) {
                       setEditingPoint({ ...editingPoint, collection_id: newCol.id });
+                      // Обновляем точку в массиве, если это новая точка
+                      if (editingPoint.id === 'virtual-new') {
+                        onPointsUpdate(points.map(p => 
+                          p.id === 'virtual-new' ? { ...p, collection_id: newCol.id } : p
+                        ));
+                      }
                     }
                     
                     setShowNewCollectionModal(false);
