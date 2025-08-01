@@ -113,9 +113,7 @@ const {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [newCollectionColor, setNewCollectionColor] = useState('#3B82F6');
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
-
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [onCollectionsUpdate, setOnCollectionsUpdate] = useState<((collections: Collection[]) => void) | null>(null);
 
   /* ----------  EFFECTS  ---------- */
   useEffect(() => setIsClient(true), []);
