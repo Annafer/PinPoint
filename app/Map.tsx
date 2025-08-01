@@ -9,6 +9,7 @@ interface MapProps {
   collections: Collection[];
   publicCollections: Collection[];
   onPointsUpdate: (points: Point[]) => void;
+  onCollectionsUpdate?: (collections: Collection[]) => void;
   centerPointId?: string | null;
   onCenterPointShown?: () => void;
   selectedCollectionId?: string | undefined;

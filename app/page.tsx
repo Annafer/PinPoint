@@ -112,6 +112,15 @@ useEffect(() => {
     }
     
     try {
+      // Проверяем уникальность имени
+      const nameExists = collections.some(c => 
+        c.name.toLowerCase() === newCollectionName.trim().toLowerCase()
+      );
+      if (nameExists) {
+        alert('Коллекция с таким именем уже существует');
+        return;
+      }
+      
       const newCollection = await createCollection(newCollectionName.trim(), newCollectionColor, newCollectionIsPublic);
       setCollections([...collections, newCollection]);
       setNewCollectionName('');
@@ -196,6 +205,7 @@ useEffect(() => {
         collections={collections}
         publicCollections={publicCollections}
         onPointsUpdate={handlePointsUpdate}
+        onCollectionsUpdate={setCollections}
         centerPointId={centerPoint}
         onCenterPointShown={() => setCenterPoint(null)}
         selectedCollectionId={selectedCollectionId}

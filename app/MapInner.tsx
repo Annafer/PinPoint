@@ -43,6 +43,7 @@ interface MapInnerProps {
   collections: Collection[];
   publicCollections: Collection[];
   onPointsUpdate: (points: Point[]) => void;
+  onCollectionsUpdate?: (collections: Collection[]) => void;
   centerPointId?: string | null;
   onCenterPointShown?: () => void;
   selectedCollectionId?: string | undefined;
@@ -72,18 +73,19 @@ function CenterMap({ point, onCentered }: { point: Point | null; onCentered: () 
 
 /* ----------  MAIN COMPONENT  ---------- */
 const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
-  const {
-    points,
-    collections,
-    publicCollections,
-    onPointsUpdate,
-    centerPointId,
-    onCenterPointShown,
-    selectedCollectionId,
-    filterType,
-    myCollectionFilter,
-    selectedPublicCollectionId,
-  } = props;
+const {
+  points,
+  collections,
+  publicCollections,
+  onPointsUpdate,
+  onCollectionsUpdate,
+  centerPointId,
+  onCenterPointShown,
+  selectedCollectionId,
+  filterType,
+  myCollectionFilter,
+  selectedPublicCollectionId,
+} = props;
 
   /* ----------  STATE  ---------- */
   const [map, setMap] = useState<L.Map | null>(null);
@@ -113,6 +115,7 @@ const MapInner = forwardRef<any, MapInnerProps>((props, ref) => {
   const [newCollectionIsPublic, setNewCollectionIsPublic] = useState(false);
 
   const [pendingPoint, setPendingPoint] = useState<{ lat: number; lng: number } | null>(null);
+  const [onCollectionsUpdate, setOnCollectionsUpdate] = useState<((collections: Collection[]) => void) | null>(null);
 
   /* ----------  EFFECTS  ---------- */
   useEffect(() => setIsClient(true), []);
@@ -205,7 +208,8 @@ useEffect(() => {
           setShowBottomSheet(true);
         } else {
           const virtualPoint = { ...tempEditingPoint, id: 'virtual-new' };
-          onPointsUpdate([...points, virtualPoint]);
+          // Используем filteredPoints вместо points для корректной работы с фильтрами
+          setFilteredPoints([...filteredPoints, virtualPoint]);
           setOpenPopupId('virtual-new');
         }
       },
@@ -263,6 +267,8 @@ useEffect(() => {
           collection_id: editingPoint.collection_id,
         });
         onPointsUpdate([...points.filter((p) => p.id !== 'virtual-new'), saved]);
+        // Убираем виртуальную точку из отфильтрованных точек
+        setFilteredPoints(filteredPoints.filter((p) => p.id !== 'virtual-new'));
         setPendingPoint(null);
       } else {
         if (!canEditPoint(editingPoint)) {
@@ -876,11 +882,20 @@ useEffect(() => {
                   }
                   
                   try {
-                    const updated = await updatePoint(point.id, {
-                      lat: newPosition.lat,
-                      lng: newPosition.lng
-                    });
-                    onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
+                    // Сначала обновляем локальное состояние для мгновенного отображения
+                    onPointsUpdate(points.map(p => 
+                      p.id === point.id 
+                        ? { ...p, lat: newPosition.lat, lng: newPosition.lng } 
+                        : p
+                    ));
+                    
+                    try {
+                      const updated = await updatePoint(point.id, {
+                        lat: newPosition.lat,
+                        lng: newPosition.lng
+                      });
+                      // Обновляем с актуальными данными с сервера
+                      onPointsUpdate(points.map(p => (p.id === point.id ? updated : p)));
                     
                     const notification = document.createElement('div');
                     notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
@@ -960,14 +975,48 @@ useEffect(() => {
                               ))}
                             </select>
                             <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowNewCollectionModal(true);
-                              }}
-                              className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                              title="Создать новую коллекцию"
-                            >
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // Для PC версии создаем коллекцию inline
+                              const name = prompt('Название новой коллекции:');
+                              if (!name?.trim()) return;
+                              
+                              // Проверяем уникальность имени
+                              const nameExists = collections.some(c => 
+                                c.name.toLowerCase() === name.trim().toLowerCase()
+                              );
+                              if (nameExists) {
+                                alert('Коллекция с таким именем уже существует');
+                                return;
+                              }
+                              
+                              try {
+                                const newCol = await createCollection(name.trim(), '#3B82F6', false);
+                                
+                                // Обновляем локальный список коллекций
+                                const updatedCollections = [...collections, newCol];
+                                if (onCollectionsUpdate) {
+                                  onCollectionsUpdate(updatedCollections);
+                                }
+                                
+                                // Сразу выбираем новую коллекцию для точки
+                                if (!editingPoint || editingPoint.id !== point.id) setEditingPoint(point);
+                                setEditingPoint((prev) => ({ ...prev!, collection_id: newCol.id }));
+                                
+                                // Уведомление
+                                const notification = document.createElement('div');
+                                notification.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
+                                notification.innerText = '✓ Коллекция создана';
+                                document.body.appendChild(notification);
+                                setTimeout(() => notification.remove(), 2000);
+                              } catch (err) {
+                                alert('Ошибка при создании коллекции');
+                              }
+                            }}
+                            className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                            title="Создать новую коллекцию"
+                          >
                               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                               </svg>
@@ -1089,15 +1138,30 @@ useEffect(() => {
                 onClick={async () => {
                   if (!newCollectionName.trim()) return alert('Введите название коллекции');
                   try {
+                    // Проверяем уникальность имени
+                    const nameExists = collections.some(c => 
+                      c.name.toLowerCase() === newCollectionName.trim().toLowerCase()
+                    );
+                    if (nameExists) {
+                      alert('Коллекция с таким именем уже существует');
+                      return;
+                    }
+                    
                     const newCol = await createCollection(newCollectionName.trim(), newCollectionColor, newCollectionIsPublic);
+                    
+                    // Обновляем локальный список коллекций
+                    const updatedCollections = [...collections, newCol];
+                    if (onCollectionsUpdate) {
+                      onCollectionsUpdate(updatedCollections);
+                    }
+                    
                     if (editingPoint) {
                       setEditingPoint({ ...editingPoint, collection_id: newCol.id });
                     }
-                    onPointsUpdate(points);
-                    // Обновляем список коллекций через родительский компонент
-                    window.dispatchEvent(new CustomEvent('collectionsUpdated'));
+                    
                     setShowNewCollectionModal(false);
                     setNewCollectionName('');
+                    setNewCollectionColor('#3B82F6');
                     setNewCollectionIsPublic(false);
                     const note = document.createElement('div');
                     note.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow z-[2000]';
